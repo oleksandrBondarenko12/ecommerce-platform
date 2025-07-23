@@ -15,25 +15,31 @@ class ProductListView(ListAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+
 class ProductDetailView(RetrieveAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
 # Only admins can POST
+
+
 class ProductCreateView(CreateAPIView):
     queryset = Product.objects.all()
-    serializers_class = ProductSerializer
+    serializer_class = ProductSerializer
     permission_classes = [permissions.IsAdminUser]
 
 # Only admins can PUT/PATCH
+
+
 class ProductUpdateView(UpdateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAdminUser]
 
 # Only admins can delete
+
+
 class ProductDeleteView(DestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAdminUser]
-
