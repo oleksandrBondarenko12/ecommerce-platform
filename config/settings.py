@@ -14,6 +14,7 @@ from decouple import config
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# Calculates the root path of the project so Django knows where to find files.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -21,6 +22,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# A unique, secret string used for cryptographic signing (e.g., for sessions, 
+# and password resets. It is loaded from .env file).
 SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -30,7 +33,9 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
-
+# This is the registry of all "apps" that make up the project. An "app" is a
+# self-contained module of functionality. One must list Django's built-in apps
+# (django.contrib.admin, etc) and your own apps (core, users, products ) here.
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -44,6 +49,18 @@ INSTALLED_APPS = [
     'products',
 ]
 
+# Request's journey
+#     A raw HttpRequest arrives at the factory entrance.
+
+#    It goes to Worker 1 (SecurityMiddleware). This worker checks for basic security threats. If it finds one, it might reject the material immediately. Otherwise, it stamps it "OK" and passes it on.
+
+#    It goes to Worker 2 (SessionMiddleware). This worker looks at the request for a session_id cookie. If it finds one, it fetches the corresponding session data (e.g., "user has item X in their cart") from the database and attaches it to the request.
+
+#    It goes to Worker 5 (AuthenticationMiddleware). This is a crucial worker. It looks at the session data attached by Worker 2. If the session indicates a logged-in user, this worker fetches the full User object from the database and attaches it to the request as a new attribute: request.user. If no user is logged in, it attaches an AnonymousUser object.
+
+#   ...and so on, down the line.
+
+#    Finally, the fully processed, enriched HttpRequest (now with request.user, request.session, etc. attached) arrives at the Main Machine (Your View).
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -53,6 +70,21 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+# Response's journey
+
+#     Your View processes the request and produces a raw HttpResponse.
+
+#    The response is given to the last worker, who passes it back up the line.
+
+#    Worker 5 (AuthenticationMiddleware) gets the response. It doesn't need to do anything, so it just passes it along.
+
+#    Worker 4 (CsrfViewMiddleware) checks if the response needs a CSRF token added to it (for forms) and adds it if necessary.
+
+#    Worker 2 (SessionMiddleware) checks if any session data was modified by the view. If so, it saves the changes to the database and adds the session_id cookie to the response headers.
+
+#    ...and so on, back up the line.
+
+#    Finally, the fully processed HttpResponse is sent out of the factory to the user.
 
 ROOT_URLCONF = 'config.urls'
 

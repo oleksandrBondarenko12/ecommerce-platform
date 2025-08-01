@@ -1,3 +1,7 @@
+# This file contains the logic that handles requests and returns responses.
+# A view is a function or class that takes a web request and returns a web
+# response. In your case, these are DRF views that return JSON data.
+
 from django.shortcuts import render
 from rest_framework import generics, permissions
 from .serializers import RegisterSerializer, UserSerializer

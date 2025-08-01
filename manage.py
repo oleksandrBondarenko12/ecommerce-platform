@@ -6,6 +6,8 @@ import sys
 
 def main():
     """Run administrative tasks."""
+    # It tells your project where to find main settings (config/settings.py)
+    # This is the "brain" of the application.
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
     try:
         from django.core.management import execute_from_command_line
@@ -15,6 +17,8 @@ def main():
             "available on your PYTHONPATH environment variable? Did you "
             "forget to activate a virtual environment?"
         ) from exc
+    # It takes the command you give it (e.g. runserver, migrate etc) and
+    # passes it to Django's core machinery to execute.
     execute_from_command_line(sys.argv)
 
 
