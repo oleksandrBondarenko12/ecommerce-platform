@@ -26,10 +26,24 @@ class CartView(APIView):
     def post(self, request, *args, **kwargs):
         """
         Add a product to the cart or update its quantity.
+        This method is idempotent: it SETS the quantity of a product.
         Expects a JSON body with 'product_id' and 'quantity'.
         """
         product_id = request.data.get('product_id')
-        quantity = request.data.get('quantity', 1)
+
+        # Validate quantity to ensure it's a positive integer.
+        try:
+            quantity = int(request.data.get('quantity', 1))
+            if quantity <= 0:
+                return Response(
+                    {"error": "Quantity must be a positive integer."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        except (ValueError, TypeError):
+             return Response(
+                {"error": "Invalid quantity provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if not product_id:
             return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -42,26 +56,22 @@ class CartView(APIView):
         # Get or create the user's cart.
         cart, _ = Cart.objects.get_or_create(user=request.user)
 
-        # Get or create the cart item.
-        # This will update the quantity if the item is already in the cart.
-        cart_item, created = CartItem.objects.get_or_create(
-            cart=cart, 
+        # Use update_or_create to simplify the logic. This creates a new CartItem
+        # or updates the quantity of an existing one.
+        cart_item, created = CartItem.objects.update_or_create(
+            cart=cart,
             product=product,
-            # `defaults` is used for the fields to set if a new object is created.
             defaults={'quantity': quantity}
         )
 
-        # If the item was not created (it already existed), update its quantity.
-        if not created:
-            cart_item.quantity += int(quantity)
-            cart_item.save()
-
+        # Return 201 Created for a new item, 200 OK for an updated one.
+        status_code = status.HTTP_201_CREATED if created else status.HTTP_200_OK
         serializer = CartSerializer(cart)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status_code)
 
     def delete(self, request, *args, **kwargs):
         """
-        Remove a product from the cart.
+        Remove a product from the cart entirely.
         Expects a JSON body with 'product_id'.
         """
         product_id = request.data.get('product_id')
@@ -69,16 +79,18 @@ class CartView(APIView):
         if not product_id:
             return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            # Get the cart and the specific item to delete.
-            cart = Cart.objects.get(user=request.user)
-            cart_item = CartItem.objects.get(cart=cart, product_id=product_id)
-            cart_item.delete()
-            
-            serializer = CartSerializer(cart)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        # Find the specific item belonging to the current user's cart.
+        # This is more efficient and secure than fetching the cart first.
+        cart_item = CartItem.objects.filter(
+            cart__user=request.user,
+            product_id=product_id
+        ).first()
 
-        except Cart.DoesNotExist:
-            return Response({"error": "Cart not found."}, status=status.HTTP_404_NOT_FOUND)
-        except CartItem.DoesNotExist:
+        if not cart_item:
             return Response({"error": "Item not found in cart."}, status=status.HTTP_404_NOT_FOUND)
+
+        cart_item.delete()
+
+        # A 204 No Content response is standard for a successful DELETE,
+        # indicating success without sending a response body.
+        return Response(status=status.HTTP_204_NO_CONTENT)

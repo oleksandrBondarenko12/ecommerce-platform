@@ -1,14 +1,14 @@
-# Create your models here.
 # In cart/models.py
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from products.models import Product
 
 
 class Cart(models.Model):
     # A cart should belong to one user, and a user should only have one cart.
     # OneToOneField is the perfect choice for this relationship.
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart')
+    # Using settings.AUTH_USER_MODEL makes the app compatible with custom user models.
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='cart')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
