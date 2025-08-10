@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'users',
     'products',
     'cart',
+    'orders',
 ]
 # MIDDLEWARE is like an assembly line for requests and responses. Each "worker"
 # (middleware class) processes the request on its way to the view, and then

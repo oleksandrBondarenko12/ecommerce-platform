@@ -40,7 +40,7 @@ class CartView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
         except (ValueError, TypeError):
-             return Response(
+            return Response(
                 {"error": "Invalid quantity provided."},
                 status=status.HTTP_400_BAD_REQUEST
             )

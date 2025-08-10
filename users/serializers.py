@@ -23,8 +23,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         # This links the serializer to Django's built-in User model.
         # DRF will use this to automatically understand things like 'username'
         # and 'email' should be character fields.
-        model = User
-        
+        model = User     
         # These are the fields the "application form" requires from the user.
         # The client MUST provide a username, email, and password.
         fields = ['username', 'email', 'password']
@@ -54,7 +53,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         # In more complex scenarios, you might set this to `False` and require
         # the user to click an email confirmation link to activate their account.
         user.is_active = True
-        
         # Step 4: Now that the password is a secure hash, save the
         # complete user object to the database.
         user.save()
