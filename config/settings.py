@@ -47,57 +47,154 @@ INSTALLED_APPS = [
     'rest_framework',
     'users',
     'products',
+    'cart',
 ]
+# MIDDLEWARE is like an assembly line for requests and responses. Each "worker"
+# (middleware class) processes the request on its way to the view, and then
+# processes the response on its way back out to the user. The order is critical.
 
-# Request's journey
+# Request's journey (Top to Bottom)
 #     A raw HttpRequest arrives at the factory entrance.
 
-#    It goes to Worker 1 (SecurityMiddleware). This worker checks for basic security threats. If it finds one, it might reject the material immediately. Otherwise, it stamps it "OK" and passes it on.
-
-#    It goes to Worker 2 (SessionMiddleware). This worker looks at the request for a session_id cookie. If it finds one, it fetches the corresponding session data (e.g., "user has item X in their cart") from the database and attaches it to the request.
-
-#    It goes to Worker 5 (AuthenticationMiddleware). This is a crucial worker. It looks at the session data attached by Worker 2. If the session indicates a logged-in user, this worker fetches the full User object from the database and attaches it to the request as a new attribute: request.user. If no user is logged in, it attaches an AnonymousUser object.
-
-#   ...and so on, down the line.
-
-#    Finally, the fully processed, enriched HttpRequest (now with request.user, request.session, etc. attached) arrives at the Main Machine (Your View).
 MIDDLEWARE = [
+    # Worker 1 (SecurityMiddleware): The Gatekeeper
+    # It checks for basic security threats right at the start. If it finds one,
+    # it might reject the request immediately. Otherwise, it stamps it "OK" and
+    # passes it on. It handles things like SSL redirects and host header validation.
     'django.middleware.security.SecurityMiddleware',
+
+    # Worker 2 (SessionMiddleware): The Record Keeper
+    # It looks at the request for a session_id cookie. If it finds one, it fetches
+    # the corresponding session data (e.g., "user has item X in their cart") from
+    # the database and attaches it to the request as `request.session`.
     'django.contrib.sessions.middleware.SessionMiddleware',
+
+    # Worker 3 (CommonMiddleware): The Standards & Compliance Officer
+    # This worker enforces some of Django's conventions. For example, if a user
+    # requests '/products' and your URL pattern is '/products/', this middleware
+    # will issue a redirect to the URL with the trailing slash. This prevents
+    # duplicate content for search engines. It also raises an error for disallowed hosts.
     'django.middleware.common.CommonMiddleware',
+
+    # Worker 4 (CsrfViewMiddleware): The Security Seal Inspector
+    # For "unsafe" requests (like POST, PUT, DELETE), this worker looks for a
+    # special, secret token (the CSRF token). This token proves the request originated
+    # from a form on YOUR site, not from a malicious third-party site. If the
+    # token is missing or invalid, the request is rejected. This prevents
+    # Cross-Site Request Forgery attacks.
     'django.middleware.csrf.CsrfViewMiddleware',
+
+    # Worker 5 (AuthenticationMiddleware): The ID Checker
+    # This is a crucial worker. It looks at the session data attached by Worker 2.
+    # If the session indicates a logged-in user, this worker fetches the full User
+    # object from the database and attaches it to the request as `request.user`.
+    # If no user is logged in, it attaches an `AnonymousUser` object.
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # Worker 6 (MessageMiddleware): The Notification Carrier
+    # This worker handles one-time "flash" messages. It checks the session for any
+    # messages stored from a previous request (e.g., "Profile updated successfully!")
+    # and makes them available to be displayed in templates for the current request.
     'django.contrib.messages.middleware.MessageMiddleware',
+
+    # Worker 7 (XFrameOptionsMiddleware): The Final Packaging Inspector
+    # As a final security check, this worker adds a header to the response that
+    # prevents your site from being displayed inside an `<iframe>` on another site.
+    # This protects against an attack called "clickjacking," where an attacker could
+    # trick a user into clicking something on your site without realizing it.
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-# Response's journey
+#   ...and so on, down the line.
 
+#    Finally, the fully processed, enriched HttpRequest (now with request.user,
+#    request.session, etc. attached) arrives at the Main Machine (Your View).
+
+
+# Response's journey (Bottom to Top)
 #     Your View processes the request and produces a raw HttpResponse.
 
-#    The response is given to the last worker, who passes it back up the line.
+#    The response is given to the last worker (Worker 7), who passes it back
+#    up the line, adding its `X-Frame-Options` header.
 
-#    Worker 5 (AuthenticationMiddleware) gets the response. It doesn't need to do anything, so it just passes it along.
+#    Worker 6 (MessageMiddleware) doesn't typically modify the response, but it's
+#    responsible for storing any *new* messages added by the view into the session
+#    for the *next* request to pick up.
 
-#    Worker 4 (CsrfViewMiddleware) checks if the response needs a CSRF token added to it (for forms) and adds it if necessary.
+#    Worker 5 (AuthenticationMiddleware) gets the response. It doesn't need to do
+#    anything, so it just passes it along.
 
-#    Worker 2 (SessionMiddleware) checks if any session data was modified by the view. If so, it saves the changes to the database and adds the session_id cookie to the response headers.
+#    Worker 4 (CsrfViewMiddleware) checks if the response is rendering a form.
+#    If so, it injects the secret CSRF token into the HTML so it will be available
+#    for the next POST request.
 
-#    ...and so on, back up the line.
+#    Worker 3 (CommonMiddleware) may add a `Content-Length` header to the response.
 
-#    Finally, the fully processed HttpResponse is sent out of the factory to the user.
+#    Worker 2 (SessionMiddleware) checks if any session data was modified by the
+#    view. If so, it saves the changes to the database and adds/updates the
+#    session_id cookie in the response headers.
+
+#    Worker 1 (SecurityMiddleware) might add security-related headers (like
+#    Strict-Transport-Security) to the final response.
+
+#    Finally, the fully processed HttpResponse is sent out of the factory to the user..
 
 ROOT_URLCONF = 'config.urls'
 
+# This is the master configuration for the entire "Design & Publishing Department".
+# It tells Django which tools to use and where to find the blueprints (template files).
 TEMPLATES = [
     {
+        # 'BACKEND': The primary machine used for publishing.
+        # This specifies the templating engine. Django's built-in engine is powerful
+        # and deeply integrated with the framework. You could also swap this out
+        # for other engines like Jinja2 if you had a specific reason.
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+
+        # 'DIRS': The central blueprint library.
+        # This is a list of directories where Django will look for project-wide
+        # template files. For example, you might have a base.html that defines the
+        # main layout for your entire site. It is currently empty, which is common
+        # for API-focused projects that don't serve a lot of HTML. If you were
+        # building a traditional website, you would add a path here, like:
+        # 'DIRS': [BASE_DIR / 'templates'],
         'DIRS': [],
+
+        # 'APP_DIRS': The local blueprint storage for each department (app).
+        # When set to True, Django will automatically look for a "templates"
+        # subdirectory inside each of your installed apps (like 'products/templates/').
+        # This is a key feature for making apps self-contained and reusable.
         'APP_DIRS': True,
+
+        # 'OPTIONS': The configuration panel for the publishing machine.
+        # These are specific settings for the chosen 'BACKEND'.
         'OPTIONS': {
+            # 'context_processors': The automatic "watermarking" service.
+            # A context processor is a function that adds variables to the "context"
+            # of *every single template* automatically. This saves you from having
+            # to manually add the same data in every view. Think of it as pre-printing
+            # standard information (like the current user or site-wide notifications)
+            # on every page before the unique content is added.
             'context_processors': [
+                # Adds debugging variables to the context when DEBUG=True.
+                # This gives you access to things like `{{ sql_queries }}` in your
+                # templates for troubleshooting.
                 'django.template.context_processors.debug',
+
+                # This is one of the most important processors. It adds the current
+                # `request` object to the template's context. This allows you to
+                # access request-specific information directly in your template,
+                # for example: `{{ request.user }}` or `{{ request.path }}`.
                 'django.template.context_processors.request',
+
+                # This specifically adds the `user` object (representing the
+                # currently logged-in user or an AnonymousUser) and a `perms`
+                # object (for checking user permissions) to the context. It's
+                # essential for any site with user authentication.
                 'django.contrib.auth.context_processors.auth',
+
+                # This works with the `MessageMiddleware`. It adds a `messages`
+                # variable to the context, allowing you to loop through and display
+                # any "flash messages" (e.g., "Profile updated successfully!").
                 'django.contrib.messages.context_processors.messages',
             ],
         },
@@ -122,17 +219,48 @@ DATABASES = {
 }
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
 
+# This is the configuration for the "Password Quality Control Team".
+# Each item in this list is a different inspector with a specific job.
 AUTH_PASSWORD_VALIDATORS = [
     {
+        # Inspector #1: The Anti-Identity-Theft Specialist
+        # This validator's job is to prevent users from choosing a password
+        # that is too similar to their personal information. It checks the
+        # password against the user's username, first name, last name, and email.
+        # WHY: This is a common attack vector; hackers will always try passwords
+        # based on public user info first.
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
     {
+        # Inspector #2: The Structural Engineer
+        # This is the most straightforward inspector. It checks if the password
+        # meets a minimum length requirement. By default, it's 8 characters.
+        # WHY: Longer passwords are exponentially harder to crack using
+        # brute-force methods. This is the most basic and one of the most
+        # effective password strength rules.
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        # YOU CAN CONFIGURE IT: You can add an 'OPTIONS' key to change the length:
+        # 'OPTIONS': {
+        #     'min_length': 10,
+        # }
     },
     {
+        # Inspector #3: The Historian
+        # This inspector checks the proposed password against a built-in list
+        # of thousands of the most common and weak passwords (e.g., 'password',
+        # '123456', 'qwerty', 'dragon').
+        # WHY: These are the passwords found in nearly every password breach list,
+        # making them extremely unsafe. This check prevents the most obvious
+        # weak choices.
         'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
     },
     {
+        # Inspector #4: The Complexity Analyst
+        # This inspector's job is simple: it checks if the password consists
+        # entirely of numbers.
+        # WHY: A password like '19870423' is much, much easier to guess or
+        # brute-force than one that includes letters and symbols. This validator
+        # ensures at least some basic complexity by rejecting all-numeric passwords.
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
