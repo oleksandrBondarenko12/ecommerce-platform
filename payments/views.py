@@ -4,6 +4,7 @@ from django.core.mail import send_mail  # <-- REMOVE 'outbox' from this import
 from django.conf import settings
 from orders.models import Order
 
+
 class MockPaymentView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -54,4 +55,3 @@ class MockPaymentView(views.APIView):
         except Exception as e:
             # Add error logging for any unexpected email issues
             print(f"Error sending email for Order ID {order.id}: {e}")
-
