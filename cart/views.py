@@ -46,17 +46,20 @@ class CartView(APIView):
             )
 
         if not product_id:
-            return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Product ID is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
-            return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Product not found."},
+                            status=status.HTTP_404_NOT_FOUND)
 
         # Get or create the user's cart.
         cart, _ = Cart.objects.get_or_create(user=request.user)
 
-        # Use update_or_create to simplify the logic. This creates a new CartItem
+        # Use update_or_create to simplify the logic.
+        # This creates a new CartItem
         # or updates the quantity of an existing one.
         cart_item, created = CartItem.objects.update_or_create(
             cart=cart,
@@ -77,7 +80,8 @@ class CartView(APIView):
         product_id = request.data.get('product_id')
 
         if not product_id:
-            return Response({"error": "Product ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Product ID is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Find the specific item belonging to the current user's cart.
         # This is more efficient and secure than fetching the cart first.
@@ -87,7 +91,8 @@ class CartView(APIView):
         ).first()
 
         if not cart_item:
-            return Response({"error": "Item not found in cart."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error": "Item not found in cart."},
+                            status=status.HTTP_404_NOT_FOUND)
 
         cart_item.delete()
 

@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'products',
     'cart',
     'orders',
+    'payments',
 ]
 # MIDDLEWARE is like an assembly line for requests and responses. Each "worker"
 # (middleware class) processes the request on its way to the view, and then
@@ -294,3 +295,10 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@ecommerce.com'
+
+EMAIL_HOST = 'localhost'
+EMAIL_PORT = 1025
+
