@@ -19,6 +19,10 @@ jobs:
           POSTGRES_DB: test_db
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
+        # --- THIS IS THE FIX ---
+        # Map the service's internal port 5432 to the host runner's port 5432
+        ports:
+          - 5432:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -29,6 +33,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
+    # ... the rest of the file is correct and does not need to change ...
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -49,9 +54,7 @@ jobs:
 
     - name: Lint with flake8
       run: |
-        # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Run Tests
@@ -61,7 +64,7 @@ jobs:
         DB_NAME: test_db
         DB_USER: test_user
         DB_PASSWORD: test_password
-        DB_HOST: localhost # In GitHub Actions, the service is available on localhost of the runner
-        DB_PORT: 5432 # The default port for the postgres service
+        DB_HOST: localhost
+        DB_PORT: 5432
       run: |
         python manage.py test
