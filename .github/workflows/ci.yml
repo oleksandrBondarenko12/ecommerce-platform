@@ -1,8 +1,7 @@
-# .github/workflows/ci.yml
+# In .github/workflows/ci.yml
 
 name: Django CI
 
-# This workflow runs on every push to the 'main' branch
 on:
   push:
     branches: [ "main" ]
@@ -13,16 +12,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
-    # These services are like a mini-docker-compose for the CI job
     services:
       postgres:
         image: postgres:14-alpine
-        # Provide the same environment variables as your docker-compose file
         env:
           POSTGRES_DB: test_db
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
-        # Health check to wait until postgres is ready
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -37,22 +33,35 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
+        
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
 
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
 
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
     - name: Run Tests
-      # We need to provide the environment variables for Django to connect to the DB
       env:
-        SECRET_KEY: 'a-dummy-secret-key-for-testing-purposes'
+        SECRET_KEY: 'a-dummy-secret-key-for-testing-purposes-in-ci'
         DEBUG: 'True'
         DB_NAME: test_db
         DB_USER: test_user
         DB_PASSWORD: test_password
-        DB_HOST: localhost # In GitHub Actions, the service is available on localhost
+        DB_HOST: localhost # In GitHub Actions, the service is available on localhost of the runner
         DB_PORT: 5432 # The default port for the postgres service
       run: |
         python manage.py test
-
