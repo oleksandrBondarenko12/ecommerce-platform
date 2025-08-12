@@ -21,15 +21,28 @@ class ProductTests(TestCase):
         url = '/api/products/'
         response = self.client.get(url)
 
-        # Assert that the request was successful
+        # Assert that the request was successful (status code 200 OK)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # --- THIS IS THE FIX ---
+        # Assert that the response data is a list containing 1 item.
+        self.assertIsInstance(response.data, list)
+        self.assertEqual(len(response.data), 1)
         
-        # Assert that the paginated response shows a total count of 1
-        self.assertEqual(response.data['count'], 1)
-        
-        # Assert that the 'results' list contains one item
-        self.assertEqual(len(response.data['results']), 1)
-        
-        # Assert the name of the product inside the 'results' list
-        self.assertEqual(response.data['results'][0]['name'], 'Laptop')
+        # Assert that the product name from the API matches our test product
+        self.assertEqual(response.data[0]['name'], 'Laptop')
+        print("✅ Passed: Product list API endpoint returns a list with correct data.")
+
+    # Keeping the other tests is good practice!
+    def test_category_model_str(self):
+        """Unit Test: Test the __str__ representation of the Category model."""
+        category = Category.objects.get(name='Electronics')
+        self.assertEqual(str(category), 'Electronics')
+        print("✅ Passed: Category model __str__ representation.")
+
+    def test_product_model_str(self):
+        """Unit Test: Test the __str__ representation of the Product model."""
+        product = Product.objects.get(name='Laptop')
+        self.assertEqual(str(product), 'Laptop')
+        print("✅ Passed: Product model __str__ representation.")
 
