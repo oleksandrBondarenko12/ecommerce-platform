@@ -42,3 +42,4 @@ class ProductDeleteView(DestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer # Can be any of them, it just needs to identify the object.
     permission_classes = [permissions.IsAdminUser]
+

@@ -65,3 +65,4 @@ class ProfileView(generics.RetrieveAPIView):
         # the user's JWT token. This is a secure and convenient way to get the
         # currently logged-in user.
         return self.request.user
+

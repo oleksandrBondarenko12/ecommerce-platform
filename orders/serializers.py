@@ -20,3 +20,4 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'user', 'created_at', 'status', 'total_price',
                   'items']
+

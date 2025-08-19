@@ -1,5 +1,4 @@
 # In cart/serializers.py
-
 from rest_framework import serializers
 from .models import Cart, CartItem
 from products.models import Product
@@ -43,3 +42,4 @@ class CartSerializer(serializers.ModelSerializer):
         # Calculate the total price by summing up the price of each item * quantity.
         # `cart.items.all()` works because of the `related_name='items'` we defined.
         return sum(item.product.price * item.quantity for item in cart.items.all())
+

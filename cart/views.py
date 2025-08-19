@@ -99,3 +99,4 @@ class CartView(APIView):
         # A 204 No Content response is standard for a successful DELETE,
         # indicating success without sending a response body.
         return Response(status=status.HTTP_204_NO_CONTENT)
+
